@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin_Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div>
+        <span style="font-size:30px; margin-right:200px"> WELCOME to ADMIN</span>
+        <a href="admin_dashboard.html" style="margin-right:5px;margin-left:5px">Home</a>|    
+        <a href="admin_search.html" style="margin-right:5px;margin-left:5px">Search</a> |  
+        <a href="admin_summary" style="margin-right:5px;margin-left:5px">Summary</a>|
+        <a href="{{url_for('home')}}" style="margin-right:5px;margin-left:5px">Logout</a>
+        
+    </div>
+    <br>
+    <br>
+    <div>
+        <table id = "services">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Service Name</th>
+                <th>Base Price</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+              {% for n in service %}
+                  <tr>
+                      <td>{{loop.index}}</td>
+                      <td><a href='/service/{{n["ID"]}}'>{{n["ID"]}}</a></td>
+                      <td>{{n["service_name"]}}</td>
+                      <td>{{n["service_price"]}}</td>
+                      <td>
+                        <a href='/service/{{n["ID"]}}/edit' type="button">Edit</a>/
+                        <a href='/service/{{n["ID"]}}/delete' type="button">Delete</a>
+                      </td>
+                  </tr>
+              {% endfor %}
+            </tbody>
+        </table>	
+        <a href="/service/create">+New Service</a>
+    </div>
+    <br><br>
+    <div>
+        <table id = "professionals">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Experience(Yrs)</th>
+                <th>Service Name</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+              {% for n in professionals %}
+                  <tr>
+                      <td>{{loop.index}}</td>
+                      <td><a href='/professionals/{{n["ID"]}}'>{{n["ID"]}}</a></td>
+                      <td>{{n["Name"]}}</td>
+                      <td>{{n["Experience"]}}</td>
+                      <td>{{n["service_name"]}}</td>
+                      <td>
+                        <a href='/professional/{{n["ID"]}}/approve' type="button">Approve</a>/
+                        <a href='/professional/{{n["ID"]}}/reject' type="button">Reject</a>/
+                        <a href='/proffesionals/{{n["ID"]}}/delete' type="button">Delete</a>
+                      </td>
+                  </tr>
+              {% endfor %}
+            </tbody>
+        </table>	
+    </div>
+    <br><br>
+    <div>
+        <table id = "Service Requests">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Assigned professionals(if any)</th>
+                <th>Requested data</th>
+                <th>Status(R/A/C)</th>
+            </tr>
+            </thead>
+            <tbody>
+              {% for n in service_requests %}
+                  <tr>
+                      <td>{{loop.index}}</td>
+                      <td><a href='/service_requests/{{n["ID"]}}'>{{n["ID"]}}</a></td>
+                      <td>{{n["Assigned Professionals"]}}</td>
+                      <td>{{n["Requested data"]}}</td>
+                      <td>{{n["Status"]}}</td>
+                  </tr>
+              {% endfor %}
+            </tbody>
+        </table>	
+    </div>
+</body>
+</html>
