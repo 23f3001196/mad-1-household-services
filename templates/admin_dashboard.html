@@ -48,7 +48,7 @@
     </div>
     <br><br>
     <div>
-        <h4>PROFESSIONALS</h4>
+        <h4>PROFESSIONALS_VERIFICATION</h4>
         <table id = "professionals" border="1">
             <thead>
             <tr>
@@ -68,8 +68,7 @@
                       <td>{{n["pr_service_name"]}}</td>
                       <td>
                         <a href='/professional/{{n["pr_id"]}}/approve' type="button">Approve</a>/
-                        <a href='/professional/{{n["pr_id"]}}/reject' type="button">Reject</a>/
-                        <a href='/professional/{{n["pr_id"]}}/block' type="button">Block</a>
+                        <a href='/professional/{{n["pr_id"]}}/reject' type="button">Reject</a>
                       </td>
                   </tr>
               {% endfor %}
@@ -86,7 +85,6 @@
                     <th>Customer Name</th>
                     <th>Contact No</th>
                     <th>Address(with pincode)</th>
-                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -96,7 +94,6 @@
                         <td>{{n["fullname"]}}</td>
                         <td>{{n["contact_no"]}}</td>
                         <td>{{n["address"]}}{{n["pincode"]}}</td>
-                        <td><a href='/user/{{n["user_id"]}}/block' type="button">Block</a></td>
                     </tr>
                 {% endfor %}
               </tbody>

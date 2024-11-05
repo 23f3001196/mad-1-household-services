@@ -43,7 +43,7 @@ def home():
 def admin_dash():
     service=Service.query.all()
     service_requests=Service_requests.query.all()
-    prof=Professional.query.filter(Professional.pr_status!="blocked").all()
+    prof=Professional.query.filter(Professional.pr_status=="null").all()
     users=User.query.filter(User.status!="blocked").all()
     return render_template("admin_dashboard.html",service=service, service_requests=service_requests,professionals=prof,user=users)
 
@@ -52,7 +52,7 @@ def admin_dash():
 def professional_dash(pr_id):
     today = datetime.now().date()  
     professional=Professional.query.get(pr_id)
-    today_services=Service_requests.query.filter(Service_requests.professional_id == pr_id,Service_requests.date_of_request == today).all()
+    today_services=Service_requests.query.filter(Service_requests.professional_id == pr_id,Service_requests.date_of_request == today,Service_requests.service_status=="requested").all()
     accepted_services=Service_requests.query.filter(Service_requests.professional_id == pr_id,Service_requests.service_status=='accepted').all()
     closed_services=Service_requests.query.filter(Service_requests.professional_id == pr_id,Service_requests.service_status=='closed').all()
     return render_template("professional_dashboard.html",today_service=today_services,closed_service=closed_services,professional=professional,accepted_service=accepted_services)
@@ -142,16 +142,6 @@ def prof_approve(pr_id):
         return redirect(url_for('admin_dash'))
     
 
-@app.route('/<pr_id>/professional_profile', methods=['GET', 'POST'])
-def professional_profile(pr_id):
-    professional=Professional.query.get(pr_id)
-    if request.method == 'POST':
-        if request.form['password']:
-            professional.pr_password = request.form['password']
-        professional.pr_address = request.form['address']
-        db.session.commit()
-        return redirect(url_for('professional_dash', pr_id=pr_id))
-    return render_template("professional_profile.html",professional=professional)
     
 @app.route('/professional/<pr_id>/reject',methods=["GET"])
 def prof_reject(pr_id):
@@ -174,6 +164,17 @@ def customer_block(user_id):
         User.query.filter(User.user_id==user_id).update({'status':'blocked'})
         db.session.commit()
         return redirect(url_for('admin_dash'))
+    
+@app.route('/<pr_id>/professional_profile', methods=['GET', 'POST'])
+def professional_profile(pr_id):
+    professional=Professional.query.get(pr_id)
+    if request.method == 'POST':
+        if request.form['password']:
+            professional.pr_password = request.form['password']
+        professional.pr_address = request.form['address']
+        db.session.commit()
+        return redirect(url_for('professional_dash', pr_id=pr_id))
+    return render_template("professional_profile.html",professional=professional)
     
 
 @app.route('/professional/service/<user_id>/<pr_id>/accept',methods=["GET"])
