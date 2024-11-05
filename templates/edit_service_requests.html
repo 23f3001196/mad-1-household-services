@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit service_requests</title>
+</head>
+<body>
+    <h1>Edit a Service_request</h1>
+	<form action="/service_requests/{{service_requests.id}}/edit" method="POST" id="edit-service-form">
+		<div>
+			<label>Date-of-request:</label>
+			<input type="text" name="date_of_request" required />
+		</div><br><br>
+		<div>
+			<label>Remarks:</label>
+			<input type="text" name="remarks" />
+		</div>
+	</form>
+</body>
+</html>

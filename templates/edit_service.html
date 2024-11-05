@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Service</title>
+</head>
+<body>
+    <h1>Edit a Service</h1>
+	<form action="/service/{{service.service_id}}/edit" method="POST" id="edit-service-form">
+		<div>
+			<label>Description:</label>
+			<input type="text" name="s_desc" required />
+		</div><br><br>
+		<div>
+			<label>Time:</label>
+			<input type="text" name="s_time" />
+		</div><br><br>
+		<div>
+			<label>Base Price:</label>
+			<input type="text" name="b_price" />
+		</div><br><br>
+		<div>
+			<input type="submit" value = "Submit" >
+		</div>
+	</form>
+</body>
+</html>

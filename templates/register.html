@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+</head>
+<body>
+    <h1>Customer Sign-Up</h1>
+    <form action="/register_cus" method="POST" id="signup_cus">
+        <div>
+            <label>Email-ID(Username):</label>
+            <input type="text" name="email" required />
+        </div>
+        <br>
+        <div>
+            <label>Password:</label>
+            <input type="password" name="password" required />
+        </div>
+        <br>
+        <div>
+            <label>Fullname:</label>
+            <input type="text" name="fullname" required />
+        </div>
+        <br>
+        <div>
+            <label>Contact:</label>
+            <input type="text" name="phone" required/>
+        </div>
+        <br>
+        <div>
+            <label>Address:</label>
+            <input type="address" name="address" required />
+        </div>
+        <br>
+        <div>
+            <label>Pincode:</label>
+            <input type="text" name="pincode" required />
+        </div>
+        <br>
+        <button>Register</button>
+        <div>
+            <br>
+            <a href="{{url_for('home')}}">Login Here</a>
+        </div> 
+    </form>
+</body>
+</html>
