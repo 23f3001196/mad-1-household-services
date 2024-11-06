@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Search</title>
+</head>
+<body>
+    <div>
+        <span style="font-size:30px; margin-right:200px"> WELCOME to ADMIN</span>
+        <a href="{{url_for('admin_dash')}}" style="margin-right:5px;margin-left:5px">Home</a>|    
+        <a href="{{url_for('admin_search')}}" style="margin-right:5px;margin-left:5px">Search</a> |  
+        <a href="admin_summary" style="margin-right:5px;margin-left:5px">Summary</a>|
+        <a href="{{url_for('home')}}" style="margin-right:5px;margin-left:5px">Logout</a>
+        
+    </div>
+    <br>
+    <br>
+    <div class="search">
+        <h4>Search Functionality:</h4>
+        <form action="/admin/search" method="POST">
+            <select name="Search_by" >
+                <option value="">Choose a option</option>
+                <option value="servicerequest">Service Request</option>
+                <option value="customer">Customer</option>
+                <option value="professional">Professional</option>
+            </select>
+            <br>
+            <input name="text" placeholder="search text" />
+            <button>Search</button>
+
+        </form> 
+
+    </div>
+</body>
+</html>

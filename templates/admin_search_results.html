@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search_results</title>
+</head>
+<body>
+    <div>
+        <span style="font-size:30px; margin-right:200px"> WELCOME to ADMIN</span>
+        <a href="{{url_for('admin_dash')}}" style="margin-right:5px;margin-left:5px">Home</a>|    
+        <a href="{{url_for('admin_search')}}" style="margin-right:5px;margin-left:5px">Search</a> |  
+        <a href="admin_summary" style="margin-right:5px;margin-left:5px">Summary</a>|
+        <a href="{{url_for('home')}}" style="margin-right:5px;margin-left:5px">Logout</a>
+        
+    </div>
+    <br>
+    <br>
+    <div>
+
+        <span style="font-size:20px; margin-right:200px"><b>Search Results for <u>{{ search_text }}</u></span>     
+        <span style="font-size:20px">Search Type: {{ search_by }}</b></span>
+    </div>
+    <div>
+        <h2>Search Results</h2>
+        
+        {% if search_by == 'servicerequest' %}
+            <h3>service requests</h3>
+            <table id="service_requests" border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Professional(if any)</th>
+                    <th>Service Name</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for n in results %}
+                    <tr>
+                        <td>{{loop.index}}</td>
+                        <td>{{n.professional.pr_fullname}}</td>
+                        <td>{{n.service.service_name}}</td>
+                        <td>{{n["service_status"]}}</td>
+                    </tr>
+                {% endfor %}
+                </tr>
+            </tbody>
+            </table>
+        {% endif %}
+        
+        {% if search_by == 'professional' %}
+            <h4>professional</h4>
+            <table id="professional" border="1">
+            <thead>
+                <th>ID</th>
+                <th>professional_username</th>
+                <th>professional_fullname</th>
+                <th>professional_pincode</th>
+                <th>professional_contact_no</th>
+                <th>service_name</th>
+                <th>block_user</th>
+            </thead>
+            <tbody>
+                {% for n in results %}
+                    <tr>
+                        <td>{{loop.index}}</td>
+                        <td>{{n["pr_user_name"]}}</td>
+                        <td>{{n["pr_fullname"]}}</td>
+                        <td>{{n["pr_pincode"]}}</td>
+                        <td>{{n["pr_contact_no"]}}</td>
+                        <td>{{n["pr_service_name"]}}</td>
+                        <td><a href='/professional/{{n["pr_id"]}}/block' type="button">Block/</a>
+                        <a href='/professional/{{n["pr_id"]}}/unblock' type="button">Unblock</a></td>
+                    </tr>
+                {% endfor %}
+                </tr>
+            </tbody>
+            </table>
+        {% endif %}
+
+        {% if search_by == 'customer' %}
+            <h4>customer</h4>
+            <table id="customer" border="1">
+            <thead>
+                <th>ID</th>
+                <th>customer_username</th>
+                <th>customer_name</th>
+                <th>customer_address</th>
+                <th>customer_pincode</th>
+                <th>customer_contact_no</th>
+                <th>block_user</th>
+            </thead>
+            <tbody>
+                {% for n in results %}
+                    <tr>
+                        <td>{{loop.index}}</td>
+                        <td>{{n["user_name"]}}</td>
+                        <td>{{n["fullname"]}}</td>
+                        <td>{{n["address"]}}</td>
+                        <td>{{n["pincode"]}}</td>
+                        <td>{{n["contact_no"]}}</td>
+                        <td><a href='/user/{{n["user_id"]}}/block' type="button">Block/</a>
+                        <a href='/user/{{n["user_id"]}}/unblock' type="button">Unblock</a></td>
+                    </tr>
+                {% endfor %}
+                </tr>
+            </tbody>
+            </table>
+        {% endif %}
+
+    </div>
+</body>
+
+</html>

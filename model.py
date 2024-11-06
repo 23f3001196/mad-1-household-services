@@ -42,7 +42,7 @@ class Professional(db.Model):
     pr_address=db.Column(db.String(),nullable=False)
     pr_pincode=db.Column(db.Integer,nullable=False)
     pr_status=db.Column(db.String(),nullable=False)
-    service = db.relationship('Service',backref='professional')
+    service = db.relationship('Service',backref='professional',lazy=True)
 
 
 class Service_requests(db.Model):
@@ -50,7 +50,7 @@ class Service_requests(db.Model):
     id = db.Column(db.Integer,primary_key=True)
     service_id =db.Column(db.Integer,db.ForeignKey('service.service_id'),nullable=False)
     customer_id=db.Column(db.Integer,db.ForeignKey('user.user_id'),nullable=False)
-    professional_id=db.Column(db.Integer,db.ForeignKey('professional.pr_id'),nullable=False)
+    professional_id=db.Column(db.Integer,db.ForeignKey('professional.pr_id'),nullable=True)
     date_of_request=db.Column(db.Date,nullable=False)
     date_of_completion=db.Column(db.Date,nullable=True)
     service_status=db.Column(db.String(10))

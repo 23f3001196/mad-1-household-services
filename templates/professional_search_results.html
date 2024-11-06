@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search_results</title>
+</head>
+<body>
+    <div>
+        <span style="font-size:30px; margin-right:200px"> WELCOME to PROFESSIONAL</span>
+        <a href="{{url_for('professional_dash',pr_id=pr_id)}}" style="margin-right:5px;margin-left:5px">Home</a>|    
+        <a href="{{url_for('professional_search', pr_id=pr_id)}}" style="margin-right:5px;margin-left:5px">Search</a> |  
+        <a href="professional_summary" style="margin-right:5px;margin-left:5px">Summary</a>|
+        <a href="{{url_for('home')}}" style="margin-right:5px;margin-left:5px">Logout</a>
+        
+    </div>
+    <br>
+    <br>
+    <div class="a">
+        <a href="{{url_for('professional_profile',pr_id=pr_id)}}">Profile</a>
+    </div>
+    <br>
+    <div>
+
+        <span style="font-size:20px; margin-right:200px"><b>Search Results for <u>{{ search_text }}</u></span>     
+        <span style="font-size:20px">Search Type: {{ search_by }}</b></span>
+    </div>
+    <div>
+        <h2>Search Results</h2>
+        {% if search_by == 'date' %}
+            <h4>Date</h4>
+            <table id="date" border="1">
+            <thead>
+                <th>ID</th>
+                <th>Customer(if any)</th>
+                <th>Date of request</th>
+                <th>Contact No</th>
+                <th>Status</th>
+            </thead>
+            <tbody>
+                {% for n in results %}
+                    <tr>
+                        <td>{{loop.index}}</td>
+                        <td>{{n.customer.fullname}}</td>
+                        <td>{{n["date_of_request"]}}</td>
+                        <td>{{n.customer.contact_no}}</td>
+                        <td>{{n["service_status"]}}</td>
+                    </tr>
+                {% endfor %}
+                </tr>
+            </tbody>
+            </table>
+        {% endif %}
+
+        
+        {% if search_by == 'location' %}
+            <h3>Location</h3>
+            <table id="location" border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer(if any)</th>
+                    <th>Contact No</th>
+                    <th>Location</th>
+                    <th>Pincode</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for n in results %}
+                    <tr>
+                        <td>{{loop.index}}</td>
+                        <td>{{n.customer.fullname}}</td>
+                        <td>{{n.customer.contact_no}}</td>
+                        <td>{{n.customer.address}}</td>
+                        <td>{{n.customer.pincode}}</td>
+                        <td>{{n["service_status"]}}</td>
+                    </tr>
+                {% endfor %}
+                </tr>
+            </tbody>
+            </table>
+        {% endif %}
+        
+        {% if search_by == 'pincode' %}
+            <h4>professional</h4>
+            <table id="pincode" border="1">
+            <thead>
+                <th>ID</th>
+                <th>Customer(if any)</th>
+                <th>location</th>
+                <th>Pincode</th>
+                <th>Contact No</th>
+                <th>Status</th>
+            </thead>
+            <tbody>
+                {% for n in results %}
+                    <tr>
+                        <td>{{loop.index}}</td>
+                        <td>{{n.customer.fullname}}</td>
+                        <td>{{n.customer.address}}</td>
+                        <td>{{n.customer.pincode}}</td>
+                        <td>{{n.customer.contact_no}}</td>
+                        <td>{{n["service_status"]}}</td>
+                    </tr>
+                {% endfor %}
+                </tr>
+            </tbody>
+            </table>
+        {% endif %}
+
+    </div>
+
+    
+</body>
+</html>

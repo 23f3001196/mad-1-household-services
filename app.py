@@ -2,6 +2,7 @@ from flask import Flask,render_template,redirect,url_for,request,abort
 
 from datetime import datetime
 
+from sqlalchemy import or_
 
 from model import db,User,Admin,Professional,Service,Service_requests
 
@@ -51,7 +52,7 @@ def admin_dash():
 def professional_dash(pr_id):
     today = datetime.now().date()  
     professional=Professional.query.get(pr_id)
-    today_services=Service_requests.query.filter(Service_requests.professional_id == pr_id,Service_requests.date_of_request == today,Service_requests.service_status=="requested").all()
+    today_services=Service_requests.query.filter(Service_requests.date_of_request == today,Service_requests.service_status=="requested").all()
     accepted_services=Service_requests.query.filter(Service_requests.professional_id == pr_id,Service_requests.service_status=='accepted').all()
     closed_services=Service_requests.query.filter(Service_requests.professional_id == pr_id,Service_requests.service_status=='closed').all()
     return render_template("professional_dashboard.html",today_service=today_services,closed_service=closed_services,professional=professional,accepted_service=accepted_services)
@@ -65,6 +66,7 @@ def customer_dash(user_id):
     return render_template("customer_dashboard.html",service=service,service_requests=service_requests,user_id=user_id)
 
 
+#registeration for customer and professionals
 @app.route('/register_cus',methods=['GET','POST'])
 def register_cus():
     if request.method == "POST":
@@ -95,20 +97,20 @@ def register_pro():
     return render_template("register_professionals.html",services=services)
     
 
-
+#operations on service
 @app.route('/service/create',methods=['GET','POST'])
 def add_service():
     if request.method=="GET":
         return render_template("add_service.html")
-    elif request.method=="POST":
-        service=Service.query.all()
-        for i in service:
-            if i.service_name==request.form["s_name"]:
-                return render_template("add_service.html")
-        service=Service(service_name=request.form["s_name"],service_price=request.form["b_price"],service_time_required=request.form["s_time"],service_description=request.form["s_desc"])
-        db.session.add(service)
-        db.session.commit()
-        return redirect(url_for('admin_dash'))
+    
+    service=Service.query.all()
+    for i in service:
+        if i.service_name==request.form["s_name"]:
+            return render_template("add_service.html")
+    service=Service(service_name=request.form["s_name"],service_price=request.form["b_price"],service_time_required=request.form["s_time"],service_description=request.form["s_desc"])
+    db.session.add(service)
+    db.session.commit()
+    return redirect(url_for('admin_dash'))
     
 
 @app.route('/service/<service_id>/edit',methods=['GET','POST'])
@@ -117,14 +119,13 @@ def edit_service(service_id):
         service = Service.query.get(service_id)
         return render_template('edit_service.html',service=service)
 
-    elif request.method == "POST":
-        service = Service.query.filter_by(service_id=service_id).first()
-        desc = request.form['s_desc']
-        time = request.form['s_time']
-        baseprice = request.form['b_price']
-        Service.query.filter(Service.service_id==service_id).update({'service_description':desc, 'service_time_required':time,'service_price':baseprice})
-        db.session.commit()
-        return redirect(url_for('admin_dash'))
+    service = Service.query.filter_by(service_id=service_id).first()
+    desc = request.form['s_desc']
+    time = request.form['s_time']
+    baseprice = request.form['b_price']
+    Service.query.filter(Service.service_id==service_id).update({'service_description':desc, 'service_time_required':time,'service_price':baseprice})
+    db.session.commit()
+    return redirect(url_for('admin_dash'))
     
 @app.route('/service/<service_id>/delete',methods=["GET"])
 def delete_service(service_id):
@@ -133,6 +134,8 @@ def delete_service(service_id):
 		db.session.commit()
 		return redirect(url_for('admin_dash'))
 	
+
+#approve/reject/block/unblock proffesionals
 @app.route('/professional/<pr_id>/approve',methods=["GET"])
 def prof_approve(pr_id):
     if request.method=="GET":
@@ -153,17 +156,75 @@ def prof_reject(pr_id):
 @app.route('/professional/<pr_id>/block',methods=["GET"])
 def prof_block(pr_id):
     if request.method=="GET":
+        requests=Service_requests.query.filter(Service_requests.professional_id == pr_id, Service_requests.service_status == 'accepted').all()
+        for i in requests:
+            i.service_status = 'requested'
+            i.professional_id = None 
         Professional.query.filter(Professional.pr_id==pr_id).update({'pr_status':'blocked'})
         db.session.commit()
         return redirect(url_for('admin_dash'))
-    
+
+@app.route('/professional/<pr_id>/unblock',methods=["GET"])
+def prof_unblock(pr_id):
+    if request.method=="GET":
+        Professional.query.filter(Professional.pr_id==pr_id).update({'pr_status':'approved'})
+        db.session.commit()
+        return redirect(url_for('admin_dash'))
+
+#customer block /unblock  
 @app.route('/user/<user_id>/block')
 def customer_block(user_id):
     if request.method=="GET":
         User.query.filter(User.user_id==user_id).update({'status':'blocked'})
         db.session.commit()
         return redirect(url_for('admin_dash'))
+
+@app.route('/user/<user_id>/unblock')
+def customer_unblock(user_id):
+    if request.method=="GET":
+        User.query.filter(User.user_id==user_id).update({'status':'available'})
+        db.session.commit()
+        return redirect(url_for('admin_dash'))
     
+#admin search functionality
+
+@app.route('/admin/search', methods=["GET","POST"])
+def admin_search():
+    if request.method=="POST":
+
+        results=[]
+        
+        search_by = request.form.get('Search_by')
+        search_text = request.form.get('text')
+
+        if search_by == 'servicerequest':
+            results = Service_requests.query.filter(or_(
+                Service_requests.service.has(Service.service_name.contains(search_text)),
+                Service_requests.professional.has(Professional.pr_fullname.contains(search_text)),
+                Service_requests.service_status.contains(search_text)
+                )).all()
+        elif search_by == 'customer':
+            results = User.query.filter(or_(
+                User.user_name.contains(search_text),
+                User.fullname.contains(search_text),
+                User.address.ilike(f"%{search_text}%"),
+                User.pincode.contains(search_text),
+                User.contact_no.contains(search_text)
+            )).all()
+        elif search_by == 'professional':
+            results = Professional.query.filter(or_(
+                Professional.pr_user_name.contains(search_text),
+                Professional.pr_fullname.contains(search_text),
+                Professional.pr_pincode.contains(search_text),
+                Professional.pr_contact_no.contains(search_text),
+                Professional.pr_service_name.contains(search_text)
+            )).all()
+
+        return render_template('admin_search_results.html', results=results, search_by=search_by, search_text=search_text)
+    return render_template('admin_search.html')
+
+
+#professional profile
 @app.route('/<pr_id>/professional_profile', methods=['GET', 'POST'])
 def professional_profile(pr_id):
     professional=Professional.query.get(pr_id)
@@ -175,11 +236,11 @@ def professional_profile(pr_id):
         return redirect(url_for('professional_dash', pr_id=pr_id))
     return render_template("professional_profile.html",professional=professional)
     
-
+#accept/reject(update required) service request
 @app.route('/professional/service/<user_id>/<pr_id>/accept',methods=["GET"])
 def servicerequests_accept(user_id,pr_id):
     if request.method=="GET":
-        Service_requests.query.filter(Service_requests.professional_id==pr_id,Service_requests.customer_id==user_id).update({'service_status':'accepted'})
+        Service_requests.query.filter(Service_requests.customer_id==user_id,Service_requests.professional_id.is_(None)).update({'service_status':'accepted','professional_id':pr_id})
         db.session.commit()
         return redirect(url_for('professional_dash', pr_id=pr_id))
 
@@ -190,6 +251,28 @@ def servicerequests_reject(user_id,pr_id):
         db.session.commit()
         return redirect(url_for('professional_dash', pr_id=pr_id))
     
+
+#professional search
+@app.route('/professional/search/<pr_id>', methods=["GET","POST"])
+def professional_search(pr_id):
+    if request.method=="POST":
+
+        results=[]
+    
+        search_by = request.form.get('Search_by')
+        search_text = request.form.get('text')
+
+        if search_by == 'date':
+            results = Service_requests.query.filter(Service_requests.date_of_request==search_text,Service_requests.professional_id==pr_id).all()
+        elif search_by == 'location':
+            results = Service_requests.query.filter(Service_requests.customer.has(User.address.ilike(f"%{search_text}%")),Service_requests.professional_id == pr_id).all()
+        elif search_by == 'pincode':
+            results = Service_requests.query.filter(Service_requests.customer.has(User.pincode==search_text),Service_requests.professional_id == pr_id).all()
+
+        return render_template('professional_search_results.html', results=results, search_by=search_by, search_text=search_text,pr_id=pr_id)
+    return render_template('professional_search.html',pr_id=pr_id)
+
+#customer profile
 @app.route('/<user_id>/customer_profile', methods=['GET', 'POST'])
 def customer_profile(user_id):
     customer=User.query.get(user_id)
@@ -201,19 +284,23 @@ def customer_profile(user_id):
         return redirect(url_for('customer_dash', user_id=user_id))
     return render_template("customer_profile.html",customer=customer)
 
+
+#service request options
 @app.route('/service/<service_id>/<user_id>')
 def service_prof(service_id,user_id):
     service=Service.query.get(service_id)
-    best_services=Professional.query.filter(Professional.pr_service_name==service.service_name,Professional.pr_status=='approved').all()
-    service_requests=Service_requests.query.filter(Service_requests.customer_id==user_id).all()
+    best_services=Professional.query.filter(Professional.pr_service_name==service.service_name,Professional.pr_status=='approved').first()
+    service_requests=Service_requests.query.filter(Service_requests.customer_id==user_id,Service_requests.service_id==service_id).all()
     return render_template("customer_professional.html",service=service,best_services=best_services,service_requests=service_requests,user_id=user_id)
 
-
-@app.route('/best_services/book/<pr_id>/<service_id>/<user_id>')
-def book_services(pr_id,service_id,user_id):
-    service_request = Service_requests(professional_id=pr_id,customer_id=user_id,service_id=service_id,date_of_request=datetime.now().date(),service_status='requested')
+#booking
+@app.route('/best_services/book/<service_id>/<user_id>')
+def book_services(service_id,user_id):
+    service_request = Service_requests(customer_id=user_id,service_id=service_id,date_of_request=datetime.now().date(),service_status='requested')
     db.session.add(service_request)
     db.session.commit()
+    professionals=Professional.query.filter(Professional.pr_service_name==Service.service_name,Professional.pr_status=='approved').all()
+
     return redirect(url_for('customer_dash',user_id=user_id))
 
 @app.route('/service_requests/<user_id>/<pr_id>/close',methods=["GET"])
