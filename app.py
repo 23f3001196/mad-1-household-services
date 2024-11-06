@@ -2,7 +2,6 @@ from flask import Flask,render_template,redirect,url_for,request,abort
 
 from datetime import datetime
 
-from sqlalchemy import or_
 
 from model import db,User,Admin,Professional,Service,Service_requests
 
