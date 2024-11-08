@@ -29,6 +29,7 @@ class Service(db.Model):
     service_price=db.Column(db.String(),nullable=False)
     service_time_required=db.Column(db.String(),nullable=False)
     service_description=db.Column(db.String(),nullable=True)
+    professional = db.relationship('Professional',backref='a_service',lazy='select')
 
 class Professional(db.Model):
     __tablename__="professional"
@@ -42,7 +43,7 @@ class Professional(db.Model):
     pr_address=db.Column(db.String(),nullable=False)
     pr_pincode=db.Column(db.Integer,nullable=False)
     pr_status=db.Column(db.String(),nullable=False)
-    service = db.relationship('Service',backref='professional',lazy=True)
+    service=db.relationship('Service',backref='professionals',lazy='select') 
 
 
 class Service_requests(db.Model):
@@ -55,7 +56,17 @@ class Service_requests(db.Model):
     date_of_completion=db.Column(db.Date,nullable=True)
     service_status=db.Column(db.String(10))
     remarks=db.Column(db.String(),nullable=True)
+    remarks_of_customers=db.Column(db.String(),nullable=True)
+    rating=db.Column(db.Integer,nullable=True)
     customer = db.relationship('User', backref='service_requests')
     service = db.relationship('Service',backref='service_requests') 
     professional = db.relationship('Professional',backref='service_requests')
-    
+
+
+class Rejectedservicerequest(db.Model):
+    __tablename__ = "rejected_service_requests"
+    id = db.Column(db.Integer, primary_key=True)
+    service_request_id = db.Column(db.Integer, db.ForeignKey('service_requests.id'), nullable=False)
+    professional_id = db.Column(db.Integer, db.ForeignKey('professional.pr_id'), nullable=False)
+    service_request = db.relationship('Service_requests', backref='rejected_requests')
+    professional = db.relationship('Professional', backref='rejected_requests')

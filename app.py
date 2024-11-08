@@ -4,7 +4,12 @@ from datetime import datetime
 
 from sqlalchemy import or_
 
-from model import db,User,Admin,Professional,Service,Service_requests
+from model import db,User,Admin,Professional,Service,Service_requests,Rejectedservicerequest
+
+import matplotlib.pyplot as plt
+
+import matplotlib
+matplotlib.use('Agg')
 
 app=Flask(__name__)
 
@@ -52,7 +57,9 @@ def admin_dash():
 def professional_dash(pr_id):
     today = datetime.now().date()  
     professional=Professional.query.get(pr_id)
-    today_services=Service_requests.query.filter(Service_requests.date_of_request == today,Service_requests.service_status=="requested").all()
+    servicerequestsrejected=Rejectedservicerequest.query.filter_by(professional_id=pr_id).all()
+    rejected_ids = [i.service_request_id for i in servicerequestsrejected]
+    today_services = Service_requests.query.filter(Service_requests.date_of_request == today,Service_requests.service_status == "requested",Service_requests.id.notin_(rejected_ids),Service_requests.service.has(Service.service_name == professional.pr_service_name) ).all()
     accepted_services=Service_requests.query.filter(Service_requests.professional_id == pr_id,Service_requests.service_status=='accepted').all()
     closed_services=Service_requests.query.filter(Service_requests.professional_id == pr_id,Service_requests.service_status=='closed').all()
     return render_template("professional_dashboard.html",today_service=today_services,closed_service=closed_services,professional=professional,accepted_service=accepted_services)
@@ -66,7 +73,6 @@ def customer_dash(user_id):
     return render_template("customer_dashboard.html",service=service,service_requests=service_requests,user_id=user_id)
 
 
-#registeration for customer and professionals
 @app.route('/register_cus',methods=['GET','POST'])
 def register_cus():
     if request.method == "POST":
@@ -97,20 +103,20 @@ def register_pro():
     return render_template("register_professionals.html",services=services)
     
 
-#operations on service
+
 @app.route('/service/create',methods=['GET','POST'])
 def add_service():
     if request.method=="GET":
         return render_template("add_service.html")
-    
-    service=Service.query.all()
-    for i in service:
-        if i.service_name==request.form["s_name"]:
-            return render_template("add_service.html")
-    service=Service(service_name=request.form["s_name"],service_price=request.form["b_price"],service_time_required=request.form["s_time"],service_description=request.form["s_desc"])
-    db.session.add(service)
-    db.session.commit()
-    return redirect(url_for('admin_dash'))
+    elif request.method=="POST":
+        service=Service.query.all()
+        for i in service:
+            if i.service_name==request.form["s_name"]:
+                return render_template("add_service.html")
+        service=Service(service_name=request.form["s_name"],service_price=request.form["b_price"],service_time_required=request.form["s_time"],service_description=request.form["s_desc"])
+        db.session.add(service)
+        db.session.commit()
+        return redirect(url_for('admin_dash'))
     
 
 @app.route('/service/<service_id>/edit',methods=['GET','POST'])
@@ -119,13 +125,14 @@ def edit_service(service_id):
         service = Service.query.get(service_id)
         return render_template('edit_service.html',service=service)
 
-    service = Service.query.filter_by(service_id=service_id).first()
-    desc = request.form['s_desc']
-    time = request.form['s_time']
-    baseprice = request.form['b_price']
-    Service.query.filter(Service.service_id==service_id).update({'service_description':desc, 'service_time_required':time,'service_price':baseprice})
-    db.session.commit()
-    return redirect(url_for('admin_dash'))
+    elif request.method == "POST":
+        service = Service.query.filter_by(service_id=service_id).first()
+        desc = request.form['s_desc']
+        time = request.form['s_time']
+        baseprice = request.form['b_price']
+        Service.query.filter(Service.service_id==service_id).update({'service_description':desc, 'service_time_required':time,'service_price':baseprice})
+        db.session.commit()
+        return redirect(url_for('admin_dash'))
     
 @app.route('/service/<service_id>/delete',methods=["GET"])
 def delete_service(service_id):
@@ -133,9 +140,9 @@ def delete_service(service_id):
 		Service.query.filter_by(service_id=service_id).delete()
 		db.session.commit()
 		return redirect(url_for('admin_dash'))
+		
+		
 	
-
-#approve/reject/block/unblock proffesionals
 @app.route('/professional/<pr_id>/approve',methods=["GET"])
 def prof_approve(pr_id):
     if request.method=="GET":
@@ -163,22 +170,22 @@ def prof_block(pr_id):
         Professional.query.filter(Professional.pr_id==pr_id).update({'pr_status':'blocked'})
         db.session.commit()
         return redirect(url_for('admin_dash'))
-
+    
 @app.route('/professional/<pr_id>/unblock',methods=["GET"])
 def prof_unblock(pr_id):
     if request.method=="GET":
         Professional.query.filter(Professional.pr_id==pr_id).update({'pr_status':'approved'})
         db.session.commit()
         return redirect(url_for('admin_dash'))
-
-#customer block /unblock  
+    
 @app.route('/user/<user_id>/block')
 def customer_block(user_id):
     if request.method=="GET":
+        Service_requests.query.filter(Service_requests.customer_id == user_id,or_(Service_requests.service_status == 'accepted',  Service_requests.service_status == 'requested')).delete()
+        
         User.query.filter(User.user_id==user_id).update({'status':'blocked'})
         db.session.commit()
         return redirect(url_for('admin_dash'))
-
 @app.route('/user/<user_id>/unblock')
 def customer_unblock(user_id):
     if request.method=="GET":
@@ -186,8 +193,6 @@ def customer_unblock(user_id):
         db.session.commit()
         return redirect(url_for('admin_dash'))
     
-#admin search functionality
-
 @app.route('/admin/search', methods=["GET","POST"])
 def admin_search():
     if request.method=="POST":
@@ -222,9 +227,40 @@ def admin_search():
 
         return render_template('admin_search_results.html', results=results, search_by=search_by, search_text=search_text)
     return render_template('admin_search.html')
+    
 
+@app.route('/admin_summary')
+def admin_summary():
+    total_requests = Service_requests.query.count()
+    completed_requests = Service_requests.query.filter_by(service_status='closed').count()
+    assigned_requests = Service_requests.query.filter_by(service_status='requested').count()
+    labels = ['Total Requests', 'Closed Requests', 'Requested Requests']
+    sizes=[total_requests,completed_requests,assigned_requests]
+    plt.clf()
+    plt.bar(labels,sizes)
+    plt.title('Service Request Summary')
+    plt.xlabel('Status of request')
+    plt.ylabel('Number of requests')
+    plt.savefig('static/images/admin_requests.png')
 
-#professional profile
+    ratings_count = [0] * 5  
+    rating=[1,2,3,4,5]
+    service_requests = Service_requests.query.all()  
+
+    for i in service_requests:
+        if i.rating is not None:  
+            ratings_count[i.rating - 1] += 1
+    plt.clf()
+    plt.pie(ratings_count)
+    plt.legend(rating)
+    plt.axis('equal')  
+    plt.title('Service Request Ratings Distribution')
+    plt.savefig('static/images/admin_ratings.png')
+
+    return render_template('admin_summary.html')
+    
+   
+
 @app.route('/<pr_id>/professional_profile', methods=['GET', 'POST'])
 def professional_profile(pr_id):
     professional=Professional.query.get(pr_id)
@@ -235,24 +271,28 @@ def professional_profile(pr_id):
         db.session.commit()
         return redirect(url_for('professional_dash', pr_id=pr_id))
     return render_template("professional_profile.html",professional=professional)
-    
-#accept/reject(update required) service request
+
+
 @app.route('/professional/service/<user_id>/<pr_id>/accept',methods=["GET"])
 def servicerequests_accept(user_id,pr_id):
     if request.method=="GET":
-        Service_requests.query.filter(Service_requests.customer_id==user_id,Service_requests.professional_id.is_(None)).update({'service_status':'accepted','professional_id':pr_id})
+        professional=Professional.query.get(pr_id)
+        Service_requests.query.filter(Service_requests.customer_id==user_id,Service_requests.professional_id.is_(None),Service_requests.service.has(Service.service_name == professional.pr_service_name)).update({'service_status':'accepted','professional_id':pr_id})
         db.session.commit()
         return redirect(url_for('professional_dash', pr_id=pr_id))
 
 @app.route('/professional/service/<user_id>/<pr_id>/reject',methods=["GET"])
 def servicerequests_reject(user_id,pr_id):
     if request.method=="GET":
-        Service_requests.query.filter(Service_requests.professional_id==pr_id,Service_requests.customer_id==user_id).delete()
+        professional=Professional.query.get(pr_id)
+        service_request=Service_requests.query.filter(Service_requests.customer_id==user_id,Service_requests.professional_id.is_(None),Service_requests.service.has(Service.service_name == professional.pr_service_name)).first()
+        if service_request:
+            rejected_request = Rejectedservicerequest(service_request_id=service_request.id, professional_id=pr_id)
+            db.session.add(rejected_request)           
         db.session.commit()
         return redirect(url_for('professional_dash', pr_id=pr_id))
-    
 
-#professional search
+
 @app.route('/professional/search/<pr_id>', methods=["GET","POST"])
 def professional_search(pr_id):
     if request.method=="POST":
@@ -272,7 +312,41 @@ def professional_search(pr_id):
         return render_template('professional_search_results.html', results=results, search_by=search_by, search_text=search_text,pr_id=pr_id)
     return render_template('professional_search.html',pr_id=pr_id)
 
-#customer profile
+@app.route('/professional_summary/<pr_id>')
+def professional_summary(pr_id):
+    
+    completed_requests = Service_requests.query.filter_by(service_status='closed',professional_id=pr_id).count()
+    assigned_requests = Service_requests.query.filter_by(service_status='requested',professional_id=pr_id).count()
+    rejected_requests = Rejectedservicerequest.query.filter_by(professional_id=pr_id).count()
+    labels = [ 'Closed Requests', 'Requested Requests','Rejected Requests']
+    sizes=[completed_requests,assigned_requests,rejected_requests]
+    plt.clf()
+    plt.bar(labels,sizes)
+    plt.title('Service Request Summary')
+    plt.xlabel('Status of request')
+    plt.ylabel('Number of requests')
+    plt.savefig('static/images/professional_requests.png')
+
+    ratings_count = [0] * 5  
+    rating=[1,2,3,4,5]
+    service_requests = Service_requests.query.filter_by(professional_id=pr_id).all()  
+    if service_requests:
+
+        for i in service_requests:
+            if i.rating is not None:  
+                ratings_count[i.rating - 1] += 1
+        plt.clf()
+        plt.pie(ratings_count)
+        plt.legend(rating)
+        plt.axis('equal')  
+        plt.title('Service Request Ratings Distribution')
+        plt.savefig('static/images/professional_ratings.png')
+    
+
+    return render_template('professional_summary.html',pr_id=pr_id)
+    
+
+
 @app.route('/<user_id>/customer_profile', methods=['GET', 'POST'])
 def customer_profile(user_id):
     customer=User.query.get(user_id)
@@ -285,31 +359,82 @@ def customer_profile(user_id):
     return render_template("customer_profile.html",customer=customer)
 
 
-#service request options
 @app.route('/service/<service_id>/<user_id>')
 def service_prof(service_id,user_id):
     service=Service.query.get(service_id)
     best_services=Professional.query.filter(Professional.pr_service_name==service.service_name,Professional.pr_status=='approved').first()
-    service_requests=Service_requests.query.filter(Service_requests.customer_id==user_id,Service_requests.service_id==service_id).all()
+    service_requests=Service_requests.query.filter(Service_requests.customer_id==user_id,Service_requests.service_id == service_id).all()
     return render_template("customer_professional.html",service=service,best_services=best_services,service_requests=service_requests,user_id=user_id)
 
-#booking
+
 @app.route('/best_services/book/<service_id>/<user_id>')
 def book_services(service_id,user_id):
     service_request = Service_requests(customer_id=user_id,service_id=service_id,date_of_request=datetime.now().date(),service_status='requested')
     db.session.add(service_request)
     db.session.commit()
-    professionals=Professional.query.filter(Professional.pr_service_name==Service.service_name,Professional.pr_status=='approved').all()
-
     return redirect(url_for('customer_dash',user_id=user_id))
 
-@app.route('/service_requests/<user_id>/<pr_id>/close',methods=["GET"])
-def customer_close(user_id,pr_id):
-    if request.method=="GET":
-        Service_requests.query.filter(Service_requests.professional_id==pr_id,Service_requests.customer_id==user_id).update({'service_status':'closed','date_of_completion':datetime.now().date()})
+@app.route('/service_requests/<service_request_id>/<user_id>/edit',methods=["GET","POST"])
+def edit_service_requests(service_request_id,user_id):
+    service_request=Service_requests.query.get(service_request_id)
+    if request.method=="POST":
+        date_of_request=datetime.strptime(request.form["date_of_request"], '%Y-%m-%d').date()
+        remarks=request.form["remarks"]
+        Service_requests.query.filter(Service_requests.id==service_request_id).update({'date_of_request':date_of_request,'remarks':remarks})
         db.session.commit()
         return redirect(url_for('customer_dash',user_id=user_id))
+    return render_template('edit_service_requests.html',user_id=user_id,service_request=service_request)
+       
+   
 
+@app.route('/service_requests/<user_id>/<pr_id>/close',methods=["GET","POST"])
+def customer_close(user_id,pr_id):
+    service_request = Service_requests.query.filter(Service_requests.customer_id == user_id,Service_requests.professional_id == pr_id,Service_requests.service_status == 'accepted').first() 
+    if request.method == "POST":
+        if service_request:
+            service_request.service_status = 'closed'
+            service_request.date_of_completion = datetime.now().date()
+            service_request.remarks = request.form['remarks']  
+            service_request.rating = request.form['rating'] 
+            db.session.commit()
+
+            return redirect(url_for('customer_dash', user_id=user_id))
+    return render_template('review.html',service_requests=service_request,user_id=user_id)
+
+@app.route('/customer/search/<user_id>', methods=["GET","POST"])
+def customer_search(user_id):
+    if request.method=="POST":
+
+        results=[]
+        
+        search_by = request.form.get('Search_by')
+        search_text = request.form.get('text')
+        if search_by == 'location':
+            results = Service.query.filter(Service.professional.any(Professional.pr_address.ilike(f"%{search_text}%"))).all()
+        elif search_by == 'pincode':
+            results = Service.query.filter(Service.professional.any(Professional.pr_pincode==search_text)).all()
+        elif search_by == 'service_name':
+            results = Service.query.filter(Service.service_name.ilike(f"%{search_text}%")).all()
+        
+        return render_template('customer_search_results.html', results=results, search_by=search_by, search_text=search_text,user_id=user_id)
+    return render_template('customer_search.html',user_id=user_id)
+
+@app.route('/customer_summary/<user_id>')
+def customer_summary(user_id):
+    total_requests = Service_requests.query.filter_by(customer_id=user_id).count()
+    completed_requests = Service_requests.query.filter_by(service_status='closed',customer_id=user_id).count()
+    assigned_requests = Service_requests.query.filter_by(service_status='requested',customer_id=user_id).count()
+    
+    labels = [ 'Total Requests','Closed Requests', 'Requested Requests']
+    sizes=[total_requests,completed_requests,assigned_requests]
+    plt.clf()
+    plt.bar(labels,sizes)
+    plt.title('Service Request Summary')
+    plt.xlabel('Status of request')
+    plt.ylabel('Number of requests')
+    plt.savefig('static/images/customer_requests.png')
+
+    return render_template('customer_summary.html',user_id=user_id)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', debug=True, port=5000)

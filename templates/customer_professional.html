@@ -9,8 +9,8 @@
     <div>
         <span style="font-size:30px; margin-right:200px"> WELCOME to CUSTOMER</span>
         <a href="{{url_for('customer_dash',user_id=user_id)}}" style="margin-right:5px;margin-left:5px">Home</a>|    
-        <a href="customer_search" style="margin-right:5px;margin-left:5px">Search</a> |  
-        <a href="customer_summary" style="margin-right:5px;margin-left:5px">Summary</a>|
+        <a href="{{url_for('customer_search',user_id=user_id)}}" style="margin-right:5px;margin-left:5px">Search</a> |  
+        <a href="{{url_for('customer_summary',user_id=user_id)}}" style="margin-right:5px;margin-left:5px">Summary</a>|
         <a href="{{url_for('home')}}" style="margin-right:5px;margin-left:5px">Logout</a>
         
     </div>

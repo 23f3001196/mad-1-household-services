@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review</title>
+</head>
+<body>
+    <h1>Service Remarks</h1>
+
+    <div>
+        <p>Service Name: {{ service_requests.service.service_name }}</p>
+        <p>Description: {{ service_requests.service.service_description }}</p>
+        <p>Date of request: {{ service_requests.date_of_request }}</p>
+        <p>Professional Name: {{service_requests.professional.pr_fullname}}</p>
+        <p>Contact No: {{service_requests.professional.pr_contact_no}}</p>
+        {% if service_requests.service_status == 'accepted' %}
+        <form action="{{ url_for('customer_close', user_id=user_id, pr_id=service_requests.professional.pr_id) }}" method="POST">
+            <label for="rating">Rating:</label>
+            <select id="rating" name="rating" required>
+                <option value="">Select a rating</option>
+                <option value="1">1 Star</option>
+                <option value="2">2 Stars</option>
+                <option value="3">3 Stars</option>
+                <option value="4">4 Stars</option>
+                <option value="5">5 Stars</option>
+            </select>
+            <br>
+            <br>
+            <label for="remarks">Remarks:</label>
+            <textarea id="remarks" name="remarks" >enter remarks</textarea>
+            <br>
+            <br>
+            <button type="submit" name="action" value="submit">Submit</button>
+            <br>
+            <br>
+            <a href="{{ url_for('customer_dash', user_id=user_id) }}">Close </a>
+        </form>
+        {% endif %}
+    </div>
+    
+</body>
+</html>
