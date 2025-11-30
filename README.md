@@ -29,6 +29,7 @@ technology.
 Installation guide:
 download the whole mad-1-household-services as zip file extract all the files
 
+download requirements 
 requirements are : flask,flask_sqlachemy,matplotlib
 
-open vs code run python app.py 
+ run python app.py 
